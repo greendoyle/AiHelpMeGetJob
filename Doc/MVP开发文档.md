@@ -14,7 +14,9 @@
 
 - 网络请求：**OkHttp \+ Retrofit**（Android行业标准组合，稳定高效，适配OpenAI兼容API调用）
 
-- UI组件：Android 原生View、RecyclerView、Dialog、悬浮窗（极简设计，聚焦功能，降低开发复杂度）
+- UI组件：Jetpack Compose（声明式UI，与Kotlin原生开发无缝集成，Android官方推荐方案；使用Material3组件库、Navigation导航构建BottomNavigation 5Tab页面架构、Dialog等构建极简MVP界面）
+
+- JSON解析：**Gson**（Retrofit converter集成，成熟稳定，一行代码搞定，适配MVP快速开发）
 
 - 最低版本：**Android 10\.0（API 29）**（适配主流安卓机型，确保无障碍服务正常运行）
 
