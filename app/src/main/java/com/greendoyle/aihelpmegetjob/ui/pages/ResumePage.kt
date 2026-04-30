@@ -7,14 +7,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.greendoyle.aihelpmegetjob.data.model.ResumeInfo
+import com.greendoyle.aihelpmegetjob.mmkv.StorageManager
 
 @Composable
 fun ResumePage() {
-    var name by remember { mutableStateOf("") }
-    var jobIntent by remember { mutableStateOf("") }
-    var workYears by remember { mutableStateOf("") }
-    var education by remember { mutableStateOf("") }
-    var coreSkills by remember { mutableStateOf("") }
+    val savedResume = remember { StorageManager.getResumeInfo() }
+    var name by remember { mutableStateOf(savedResume.name) }
+    var jobIntent by remember { mutableStateOf(savedResume.jobIntent) }
+    var workYears by remember { mutableStateOf(savedResume.workYears) }
+    var education by remember { mutableStateOf(savedResume.education) }
+    var coreSkills by remember { mutableStateOf(savedResume.coreSkills) }
+    var saveFeedback by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -70,10 +74,23 @@ fun ResumePage() {
         )
 
         Button(
-            onClick = { /* TODO: 保存简历 */ },
+            onClick = {
+                StorageManager.saveResumeInfo(
+                    ResumeInfo(name, jobIntent, workYears, education, coreSkills)
+                )
+                saveFeedback = "保存成功"
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("保存简历")
+        }
+
+        if (saveFeedback.isNotEmpty()) {
+            Text(
+                text = saveFeedback,
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }

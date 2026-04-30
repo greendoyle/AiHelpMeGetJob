@@ -6,11 +6,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.greendoyle.aihelpmegetjob.data.model.AiConfig
+import com.greendoyle.aihelpmegetjob.mmkv.StorageManager
 
 @Composable
 fun AiSettingsPage() {
-    var apiUrl by remember { mutableStateOf("") }
-    var apiKey by remember { mutableStateOf("") }
+    val savedConfig = remember { StorageManager.getAiConfig() }
+    var apiUrl by remember { mutableStateOf(savedConfig.apiUri) }
+    var apiKey by remember { mutableStateOf(savedConfig.apiKey) }
+    var saveFeedback by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -33,7 +37,6 @@ fun AiSettingsPage() {
             onValueChange = { apiKey = it },
             label = { Text("API Key") },
             modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation(),
             singleLine = true
         )
 
@@ -48,7 +51,10 @@ fun AiSettingsPage() {
                 Text("测试")
             }
             Button(
-                onClick = { /* TODO: 保存配置 */ },
+                onClick = {
+                    StorageManager.saveAiConfig(AiConfig(apiUrl, apiKey))
+                    saveFeedback = "保存成功"
+                },
                 modifier = Modifier.weight(1f)
             ) {
                 Text("保存")
@@ -57,11 +63,20 @@ fun AiSettingsPage() {
                 onClick = {
                     apiUrl = ""
                     apiKey = ""
+                    saveFeedback = ""
                 },
                 modifier = Modifier.weight(1f)
             ) {
                 Text("重置")
             }
+        }
+
+        if (saveFeedback.isNotEmpty()) {
+            Text(
+                text = saveFeedback,
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }

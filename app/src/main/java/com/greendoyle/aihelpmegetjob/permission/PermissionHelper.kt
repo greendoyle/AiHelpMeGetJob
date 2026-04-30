@@ -21,7 +21,7 @@ object PermissionHelper {
                 colonSplitter.setString(settingValue)
                 while (colonSplitter.hasNext()) {
                     val componentName = colonSplitter.next()
-                    if (componentName.contains(serviceName, ignoreCase = true)) {
+                    if (serviceName != null && componentName.contains(serviceName, ignoreCase = true)) {
                         enabled = true
                         break
                     }
