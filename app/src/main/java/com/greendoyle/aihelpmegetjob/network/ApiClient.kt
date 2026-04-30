@@ -65,9 +65,19 @@ object ApiClient {
     val api: OpenAIApi
         get() = getOrCreateRetrofit().create()
 
+    private fun fixBaseUrl(baseUrl: String): String {
+        if (baseUrl.isBlank()) return baseUrl
+        return if (baseUrl.endsWith("/")) {
+            baseUrl
+        } else {
+            "$baseUrl/"
+        }
+    }
+
     fun setBaseUrl(url: String) {
-        if (baseUrl != url) {
-            baseUrl = url
+        val fixedUrl = fixBaseUrl(url)
+        if (baseUrl != fixedUrl) {
+            baseUrl = fixedUrl
             retrofit = null
             okHttpClient = null
         }
