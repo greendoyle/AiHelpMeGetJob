@@ -1,8 +1,6 @@
 package com.greendoyle.aihelpmegetjob.network
 
-// import com.greendoyle.aihelpmegetjob.BuildConfig
-
-import com.google.gson.Gson
+import com.greendoyle.aihelpmegetjob.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -61,6 +59,9 @@ object ApiClient {
     @Volatile
     private var okHttpClient: OkHttpClient? = null
 
+    @Volatile
+    private var apiKey: String = ""
+
     val api: OpenAIApi
         get() = getOrCreateRetrofit().create()
 
@@ -73,6 +74,12 @@ object ApiClient {
     }
 
     fun getBaseUrl(): String = baseUrl
+
+    fun setApiKey(key: String) {
+        apiKey = key
+    }
+
+    fun getApiKey(): String = apiKey
 
     private fun getOrCreateRetrofit(): Retrofit {
         val existing = retrofit
@@ -98,22 +105,41 @@ object ApiClient {
             .readTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
 
+        // Add auth interceptor
+        val authInterceptor = okhttp3.Interceptor { chain ->
+            val original = chain.request()
+            val request = original.newBuilder()
+                .addHeader("Authorization", "Bearer $apiKey")
+                .addHeader("Content-Type", "application/json")
+                .build()
+            chain.proceed(request)
+        }
+        builder.addInterceptor(authInterceptor)
+
+        // Enable logging in debug builds
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        // TODO: should implement it later
-        // if (BuildConfig.DEBUG) {
-        //     builder.addInterceptor(logging)
-        // }
+        if (BuildConfig.DEBUG) {
+            builder.addInterceptor(logging)
+        }
 
         return builder.build()
     }
 
-    suspend fun testConnectivity(apiKey: String): Result<String> {
+    suspend fun testConnectivity(key: String, model: String = "gpt-3.5-turbo"): Result<String> {
+        // Set the API key before making the test call
+        setApiKey(key)
+
+        // Validate base URL is set
+        if (baseUrl.isEmpty()) {
+            return Result.failure(IllegalArgumentException("Base URL not configured"))
+        }
+
         return try {
             val response = api.chatCompletion(
                 ChatCompletionRequest(
-                    model = "",
+                    model = model.ifEmpty { "gpt-3.5-turbo" },
                     messages = listOf(Message(role = "user", content = "Hi")),
                     temperature = 0.7
                 )
