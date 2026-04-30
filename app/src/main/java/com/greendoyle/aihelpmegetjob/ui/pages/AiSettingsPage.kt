@@ -8,6 +8,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.greendoyle.aihelpmegetjob.data.model.AiConfig
 import com.greendoyle.aihelpmegetjob.mmkv.StorageManager
+import com.greendoyle.aihelpmegetjob.network.ApiClient
 
 @Composable
 fun AiSettingsPage() {
