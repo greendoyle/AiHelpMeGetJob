@@ -25,10 +25,10 @@ fun SettingsPage() {
         mutableStateOf(savedFilter.acceptOutsourcing.ifEmpty { "不限" })
     }
     var interval by remember {
-        mutableIntStateOf(savedFilter.operateInterval.toIntOrNull() ?: 30)
+        mutableStateOf(savedFilter.operateInterval.takeIf { it.isNotBlank() } ?:"30")
     }
     var dailyLimit by remember {
-        mutableIntStateOf(savedFilter.dailyLimit.toIntOrNull() ?: 50)
+        mutableStateOf(savedFilter.dailyLimit.takeIf { it.isNotBlank() } ?: "50")
     }
     var saveFeedback by remember { mutableStateOf("") }
 
@@ -75,7 +75,9 @@ fun SettingsPage() {
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("外包选项") },
-                modifier = Modifier.fillMaxWidth().menuAnchor()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
             )
             ExposedDropdownMenu(
                 expanded = outsourcingExpanded,
@@ -98,16 +100,24 @@ fun SettingsPage() {
         Text(text = "风控规则", style = MaterialTheme.typography.titleMedium)
 
         OutlinedTextField(
-            value = interval.toString(),
-            onValueChange = { interval = it.toIntOrNull() ?: 30 },
+            value = interval,
+            onValueChange = {
+                if (it.isEmpty() || it.all(Char::isDigit)) {
+                    interval = it
+                }
+            },
             label = { Text("操作间隔 (秒)") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
 
         OutlinedTextField(
-            value = dailyLimit.toString(),
-            onValueChange = { dailyLimit = it.toIntOrNull() ?: 50 },
+            value = dailyLimit,
+            onValueChange = {
+                if (it.isEmpty() || it.all(Char::isDigit)) {
+                    dailyLimit = it
+                }
+            },
             label = { Text("每日最大打招呼次数") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
@@ -125,8 +135,8 @@ fun SettingsPage() {
                         salaryMin = salaryMin,
                         salaryMax = salaryMax,
                         acceptOutsourcing = outsourcing,
-                        operateInterval = interval.toString(),
-                        dailyLimit = dailyLimit.toString()
+                        operateInterval = interval.ifBlank { "30" },
+                        dailyLimit = dailyLimit.ifBlank { "50" }
                     )
                 )
                 saveFeedback = "保存成功"
