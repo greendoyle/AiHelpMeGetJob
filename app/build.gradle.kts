@@ -36,6 +36,11 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    bundle {
+        abi {
+            enableSplit = false  // 关闭按架构拆分APK
+        }
+    }
     buildFeatures {
         compose = true
         buildConfig = true

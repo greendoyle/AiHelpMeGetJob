@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AiHelpMeGetJob</string>
+    <!-- 无障碍服务描述 -->
+    <string name="accessibility_service_description">用于读取屏幕内容，自动执行求职操作</string>
 </resources>
