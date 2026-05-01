@@ -1,6 +1,7 @@
 package com.greendoyle.aihelpmegetjob.network
 
 import com.greendoyle.aihelpmegetjob.BuildConfig
+import com.greendoyle.aihelpmegetjob.aitools.ToolRegistry
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit
 data class ChatCompletionRequest(
     val model: String = "",
     val messages: List<Message>,
+    val tools: List<Map<String, Any>>,
     val temperature: Double = 0.7
 )
 
@@ -150,6 +152,7 @@ object ApiClient {
             val response = api.chatCompletion(
                 ChatCompletionRequest(
                     model = model.ifEmpty { "gpt-3.5-turbo" },
+                    tools = ToolRegistry.getOpenaiToolsSchema(),
                     messages = listOf(Message(role = "user", content = "Hi")),
                     temperature = 0.7
                 )
