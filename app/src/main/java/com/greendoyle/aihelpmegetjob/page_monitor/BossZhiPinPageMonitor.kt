@@ -34,11 +34,12 @@ object BossZhiPinPageMonitor {
 
     /**
      * 判断是不是职位详情页
-     * 特征：职位描述、岗位职责、任职要求
+     * 特征：职位详情、岗位职责、任职要求
      */
     private fun hasJobDetailFeature(rootNode: AccessibilityNodeInfo): Boolean {
-        return containText(rootNode, "职位描述")
+        return containText(rootNode, "职位详情")
                 || containText(rootNode, "岗位职责")
+                || containText(rootNode, "任职要求")
     }
 
     /**
