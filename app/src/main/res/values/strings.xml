@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">AiHelpMeGetJob</string>
     <!-- 无障碍服务描述 -->
-    <string name="accessibility_service_description">用于读取屏幕内容，自动执行求职操作</string>
+    <string name="accessibility_service_description">开启此权限后，本APP可以读取屏幕上的应用内容、界面文字，用于自动执行求职操作。
+    我们不会收集隐私信息。</string>
 </resources>

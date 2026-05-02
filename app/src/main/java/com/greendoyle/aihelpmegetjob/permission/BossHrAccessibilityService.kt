@@ -21,7 +21,8 @@ class BossHrAccessibilityService : AccessibilityService() {
         // 3. 只有 【BOSS + 职位页面】 才解析
         if (isBossApp && isJobPage) {
 //            nodeParser.parse(rootNode)
-            UiTreeTraverser.traverseTree(rootNode)
+            // UiTreeTraverser.traverseTree(rootNode)
+            UiTreeTraverser.scanAllJobCards(rootNode)
         }
     }
 
