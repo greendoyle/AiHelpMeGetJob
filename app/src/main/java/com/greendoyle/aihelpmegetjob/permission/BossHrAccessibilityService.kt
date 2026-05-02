@@ -4,12 +4,9 @@ import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.greendoyle.aihelpmegetjob.page_monitor.BossZhiPinPageMonitor
-import com.greendoyle.aihelpmegetjob.parser.BossZhiPinParser
 import com.greendoyle.aihelpmegetjob.utils.UiTreeTraverser
 
 class BossHrAccessibilityService : AccessibilityService() {
-
-    private val nodeParser = BossZhiPinParser()
 
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var scanRunnable: Runnable? = null
@@ -42,7 +39,6 @@ class BossHrAccessibilityService : AccessibilityService() {
 
         // 3. 只有 【BOSS + 职位页面】 才解析
         if (isBossApp && isJobPage) {
-//            nodeParser.parse(rootNode)
             // UiTreeTraverser.traverseTree(rootNode)
             debounceScanCards(rootNode)
         }
