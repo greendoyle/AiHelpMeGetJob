@@ -53,6 +53,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -88,4 +93,10 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // JUnit
+    testImplementation("junit:junit:4.13.2")
+    
+    // Mockito 模拟 Android 系统类（必须）
+    testImplementation("org.mockito:mockito-core:4.11.0")
 }

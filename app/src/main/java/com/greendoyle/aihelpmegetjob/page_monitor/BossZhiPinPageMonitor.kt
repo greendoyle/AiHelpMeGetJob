@@ -36,17 +36,22 @@ object BossZhiPinPageMonitor {
      * 判断是不是职位详情页
      * 特征：职位详情、岗位职责、任职要求
      */
-    private fun hasJobDetailFeature(rootNode: AccessibilityNodeInfo): Boolean {
+    fun hasJobDetailFeature(rootNode: AccessibilityNodeInfo): Boolean {
         return containText(rootNode, "职位详情")
                 || containText(rootNode, "岗位职责")
                 || containText(rootNode, "任职要求")
     }
 
     /**
-     * 工具：遍历节点，判断是否包含某段文字
+     * 工具：递归遍历所有节点，判断是否包含指定文字
      */
-    private fun containText(root: AccessibilityNodeInfo, text: String): Boolean {
-        // 这里是简单判断，你可以自己扩展
-        return true // 你后面我可以帮你写完整遍历判断
+    fun containText(node: AccessibilityNodeInfo?, text: String): Boolean {
+        if (node == null) return false
+        if (node.text?.contains(text, true) == true) return true
+        
+        for (i in 0 until node.childCount) {
+            if (containText(node.getChild(i), text)) return true
+        }
+        return false
     }
 }
