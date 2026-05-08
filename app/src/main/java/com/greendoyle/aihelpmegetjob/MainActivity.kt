@@ -11,11 +11,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import android.content.Intent
 import androidx.navigation.compose.rememberNavController
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import com.greendoyle.aihelpmegetjob.ui.navigation.BottomNavItems
 import com.greendoyle.aihelpmegetjob.ui.navigation.AppNavigation
 import com.greendoyle.aihelpmegetjob.ui.navigation.Screen
 import com.greendoyle.aihelpmegetjob.ui.theme.AiHelpMeGetJobTheme
+import com.greendoyle.aihelpmegetjob.ui.FloatWindowManager
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,6 +31,19 @@ class MainActivity : ComponentActivity() {
                 MainScreen()
             }
         }
+        // 申请悬浮窗权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                )
+                startActivity(intent)
+            }
+        }
+
+        // 初始化透明悬浮窗
+        FloatWindowManager.init(this)
     }
 }
 

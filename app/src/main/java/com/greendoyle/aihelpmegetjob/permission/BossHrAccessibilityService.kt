@@ -38,9 +38,19 @@ class BossHrAccessibilityService : AccessibilityService() {
         val isJobPage = BossZhiPinPageMonitor.isJobPage(rootNode)
 
         // 3. 只有 【BOSS + 职位页面】 才解析
-        if (isBossApp && isJobPage) {
-            // UiTreeTraverser.traverseTree(rootNode)
-            debounceScanCards(rootNode)
+        if (isBossApp) {
+            if(isJobPage) {
+                // UiTreeTraverser.traverseTree(rootNode)
+                debounceScanCards(rootNode)
+            }
+            else if(BossZhiPinPageMonitor.hasJobDetailFeature(rootNode))
+            {
+                // TODO: 先获取当前页面所有文字
+
+                // TODO: 传递给Agent.setJobCard
+
+                // TODO: call Agent.analyze
+            }
         }
     }
 

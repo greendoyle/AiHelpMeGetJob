@@ -64,7 +64,10 @@ object ApiClient {
     @Volatile
     private var apiKey: String = ""
 
-    val api: OpenAIApi
+    @Volatile
+    private var systemPrompt: String = ""
+
+    private val api: OpenAIApi
         get() = getOrCreateRetrofit().create()
 
     private fun fixBaseUrl(baseUrl: String): String {
@@ -92,6 +95,12 @@ object ApiClient {
     }
 
     fun getApiKey(): String = apiKey
+
+    fun getSystemPrompt(): String = systemPrompt
+
+    fun setSystemPrompt(prompt: String) {
+        systemPrompt = prompt
+    }
 
     private fun getOrCreateRetrofit(): Retrofit {
         val existing = retrofit
@@ -165,5 +174,121 @@ object ApiClient {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    /**
+     * 与 LLM API 通信
+     * @param jdPrompt 职位描述/问题 prompt
+     * @param systemPrompt 系统提示词（可选，默认使用全局设置的 systemPrompt）
+     * @param model 模型名称（可选，默认使用全局配置）
+     * @return LLM 返回的响应内容
+     */
+    suspend fun chatWithLLM(
+        jdPrompt: String,
+        systemPrompt: String? = null,
+        model: String = "gpt-4o",
+        temperature: Double = 0.7
+    ): Result<String> {
+        // Validate inputs
+        if (jdPrompt.isBlank()) {
+            return Result.failure(IllegalArgumentException("JD prompt cannot be empty"))
+        }
+
+        // Validate base URL is set
+        if (baseUrl.isEmpty()) {
+            return Result.failure(IllegalArgumentException("Base URL not configured"))
+        }
+
+        // Determine which system prompt to use
+        val effectiveSystemPrompt = systemPrompt ?: this.systemPrompt
+
+        return try {
+            // Build messages with system prompt + user prompt
+            val messages = if (effectiveSystemPrompt.isNotBlank()) {
+                listOf(
+                    Message(role = "system", content = effectiveSystemPrompt),
+                    Message(role = "user", content = jdPrompt)
+                )
+            } else {
+                listOf(Message(role = "user", content = jdPrompt))
+            }
+
+            // Make API call
+            val response = api.chatCompletion(
+                ChatCompletionRequest(
+                    model = model.ifEmpty { "gpt-4o" },
+                    messages = messages,
+                    tools = ToolRegistry.getOpenaiToolsSchema(),
+                    temperature = temperature
+                )
+            )
+
+            if (response.error != null) {
+                Result.failure(Exception("API error: ${response.error.message}"))
+            } else {
+                val content = response.choices.firstOrNull()?.message?.content ?: ""
+                Result.success(content)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 批量处理多个 JD prompt
+     * @param jdPrompts 职位描述/问题列表
+     * @param systemPrompt 系统提示词（可选）
+     * @return 每个 prompt 对应的响应列表
+     */
+    suspend fun chatBatch(
+        jdPrompts: List<String>,
+        systemPrompt: String? = null,
+        model: String = "gpt-4o",
+        temperature: Double = 0.7
+    ): Result<List<String>> {
+        if (jdPrompts.isEmpty()) {
+            return Result.failure(IllegalArgumentException("JD prompts list cannot be empty"))
+        }
+
+        val results = mutableListOf<String>()
+
+        for ((index, prompt) in jdPrompts.withIndex()) {
+            if (prompt.isBlank()) {
+                results.add("[Empty prompt at index $index]")
+                continue
+            }
+
+            val effectiveSystemPrompt = systemPrompt ?: this.systemPrompt
+            val messages = if (effectiveSystemPrompt.isNotBlank()) {
+                listOf(
+                    Message(role = "system", content = effectiveSystemPrompt),
+                    Message(role = "user", content = prompt)
+                )
+            } else {
+                listOf(Message(role = "user", content = prompt))
+            }
+
+            try {
+                val response = api.chatCompletion(
+                    ChatCompletionRequest(
+                        model = model.ifEmpty { "gpt-4o" },
+                        messages = messages,
+                        tools = ToolRegistry.getOpenaiToolsSchema(),
+                        temperature = temperature
+                    )
+                )
+
+                if (response.error != null) {
+                    results.add("[Error at index $index]: ${response.error.message}")
+                } else {
+                    val content = response.choices.firstOrNull()?.message?.content ?: ""
+                    results.add(content)
+                }
+            } catch (e: Exception) {
+                results.add("[Exception at index $index]: ${e.message}")
+            }
+        }
+
+        return Result.success(results)
     }
 }

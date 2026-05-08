@@ -28,8 +28,8 @@ object UiTreeTraverser {
      * 遍历整棵 UI 树，打印：层级 + 父路径 + 控件名 + 文字 + 资源ID
      * @param root 根节点 rootInActiveWindow
      */
-    fun scanAllJobCards(root: AccessibilityNodeInfo?) {
-        root ?: return
+    fun scanAllJobCards(root: AccessibilityNodeInfo?):List<JobCard> {
+        root ?: return emptyList()
         val result = mutableListOf<JobCard>()
         findAllCardItems(root, result)
         val printContent = buildString {
@@ -41,6 +41,7 @@ object UiTreeTraverser {
             }
         }
         Log.d(TAG, printContent)
+        return result
     }
 
     /**

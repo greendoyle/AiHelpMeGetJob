@@ -20,7 +20,7 @@ object BossZhiPinPageMonitor {
      * 其他页（我的、消息、设置）→ return false
      */
     fun isJobPage(rootNode: AccessibilityNodeInfo): Boolean {
-        return hasJobListFeature(rootNode) || hasJobDetailFeature(rootNode)
+        return hasJobListFeature(rootNode)
     }
 
     /**
