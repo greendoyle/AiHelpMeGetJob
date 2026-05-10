@@ -21,11 +21,14 @@ import com.greendoyle.aihelpmegetjob.ui.navigation.AppNavigation
 import com.greendoyle.aihelpmegetjob.ui.navigation.Screen
 import com.greendoyle.aihelpmegetjob.ui.theme.AiHelpMeGetJobTheme
 import com.greendoyle.aihelpmegetjob.ui.FloatWindowManager
+import com.greendoyle.aihelpmegetjob.permission.AccessibilityHolder
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // 应用重启后从系统设置恢复无障碍权限状态，避免重复申请
+        AccessibilityHolder.syncFromSystem(this)
         setContent {
             AiHelpMeGetJobTheme {
                 MainScreen()
