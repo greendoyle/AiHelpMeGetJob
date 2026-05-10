@@ -21,7 +21,7 @@ dependencyResolutionManagement {
         maven { url = uri("https://maven.aliyun.com/repository/public") }
         maven { url = uri("https://mirrors.cloud.tencent.com/maven/google/") }
         maven { url = uri("https://mirrors.cloud.tencent.com/maven/jcenter/") }
-
+        maven { url = uri("https://jitpack.io") }
         // 官方源兜底
         google()
         mavenCentral()

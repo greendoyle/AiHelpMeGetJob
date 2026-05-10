@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.greendoyle.aihelpmegetjob.network.ApiClient
 import com.greendoyle.aihelpmegetjob.network.Message
-import com.greendoyle.aihelpmegetjob.ui.FloatWindowManager
 import com.greendoyle.aihelpmegetjob.utils.JobCard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -116,8 +115,6 @@ object Agent {
                 val aiResponse = result.getOrNull() ?: ""
                 analysisResult = aiResponse
                 Log.d(TAG, "分析完成，结果长度：${aiResponse.length}")
-                // 显示悬浮窗
-                FloatWindowManager.updateWindowText(aiResponse)
             }
         } catch (e: Exception) {
             Log.e(TAG, "分析异常", e)
@@ -151,13 +148,11 @@ object Agent {
         analysisResult = null
         isAnalyzing = false
         conversationHistory.clear()
-        FloatWindowManager.dismiss()
     }
 
     /**
      * 关闭悬浮窗（在 Activity 销毁时调用）
      */
     fun closePopup() {
-        FloatWindowManager.dismiss()
     }
 }

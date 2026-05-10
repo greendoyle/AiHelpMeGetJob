@@ -82,6 +82,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.gson)
+    
+    // EasyFloat
+    implementation("com.github.princekin-f:EasyFloat:2.0.4")
 
     // Coroutines
     implementation(libs.kotlinx.coroutines)
