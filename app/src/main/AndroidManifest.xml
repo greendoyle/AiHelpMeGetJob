@@ -34,7 +34,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".permission.AlertWindowService" android:exported="false"/>
+<!--        暂时注释掉这部分, 后续可能需要删除, 避免重复判断无障碍模式-->
+<!--        <service android:name=".permission.AlertWindowService" android:exported="false"/>-->
         <service
             android:name=".permission.MyAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

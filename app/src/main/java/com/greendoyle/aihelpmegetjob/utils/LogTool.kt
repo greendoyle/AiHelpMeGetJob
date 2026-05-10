@@ -21,12 +21,17 @@ object LogTool {
         }
     }
     // 错误日志
-    fun e(tag: String, msg: String) {
+    fun e(tag: String, msg: String?) {
         AppDispatch.launchIO {
-            Log.e(tag, msg)
+            Log.e(tag, msg ?: "")
         }
     }
-
+    fun e(tag: String, msg: String?, e: Throwable?) {
+        AppDispatch.launchIO {
+            val logMsg = msg ?: "未知异常"
+            Log.e(tag, logMsg, e)
+        }
+    }
     // 格式化打印 JSON 字符串
     fun json(tag: String, jsonStr: String) {
         AppDispatch.launchIO {

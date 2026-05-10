@@ -1,6 +1,5 @@
 package com.greendoyle.aihelpmegetjob.utils
 import android.view.accessibility.AccessibilityNodeInfo
-import android.util.Log
 
 data class JobCard(
     val allText: String,       // 卡片所有文字（直接丢给AI）
@@ -40,7 +39,7 @@ object UiTreeTraverser {
             append("======================================\n\n")
             }
         }
-        Log.d(TAG, printContent)
+        LogTool.d(TAG, printContent)
         return result
     }
 
@@ -74,7 +73,7 @@ object UiTreeTraverser {
                     append(" | ID: $resId")
                 }
             }
-            Log.d(TAG, logStr)
+            LogTool.d(TAG, logStr)
 
             // 3. 递归所有子节点
             for (i in 0 until node.childCount) {
@@ -88,7 +87,7 @@ object UiTreeTraverser {
 
         } catch (e: Exception) {
             // 防止系统节点异常崩溃
-            Log.e(TAG, "遍历异常", e)
+            LogTool.e(TAG, "遍历异常", e)
         } finally {
             // 必须回收，非常重要
             node.recycle()
@@ -122,7 +121,7 @@ object UiTreeTraverser {
         }
         } catch (e: Exception) {
             // 防止系统节点异常崩溃
-            Log.e(TAG, "遍历异常", e)
+            LogTool.e(TAG, "遍历异常", e)
         } finally {
             // 必须回收，非常重要
             node.recycle()
@@ -145,5 +144,82 @@ object UiTreeTraverser {
         }
 
         return sb.toString().trim()
+    }
+    /**
+     * 从无障碍根节点，按 UI 层级提取岗位职责
+     * 规则：
+     * 1. 找到 text = "职位详情" 的节点
+     * 2. 它的父是 RelativeLayout
+     * 3. 取兄弟节点中的 LinearLayout
+     * 4. 忽略空布局、空文本
+     * 5. 返回该 LinearLayout 下的所有文本（岗位职责）
+     */
+    fun extractJobDescription(root: AccessibilityNodeInfo): String {
+        // 1. 找到文字 = 职位详情 的节点
+        val jobDetailNode = findNodeByText(root, "职位详情")
+            ?: return "未找到职位详情"
+        LogTool.d(TAG, "节点文本: ${jobDetailNode.text}")
+        // 2. 获取父节点（必须是 RelativeLayout）
+        val parentRl = jobDetailNode.parent
+            ?.takeIf { it.className == "android.widget.RelativeLayout" }
+            ?: return "未找到职位详情父布局"
+
+        // 3. 获取共同父容器
+        val commonParent = parentRl.parent ?: return "无共同父容器"
+
+        // 4. 在兄弟节点里找：LinearLayout + 非空
+        val targetLayout = (0 until commonParent.childCount)
+            .map { commonParent.getChild(it) }
+            .firstOrNull { child ->
+                child.className == "android.widget.LinearLayout" &&
+                        hasTextOrChildren(child) // 过滤空布局
+            }
+
+        // 5. 提取所有文本
+        return targetLayout?.let { getAllNodeText(it) }?.trim()
+            ?: "未找到岗位职责"
+    }
+
+// ===================== 工具函数 =====================
+
+    /**
+     * 递归查找指定文字的节点
+     */
+    private fun findNodeByText(node: AccessibilityNodeInfo, text: String): AccessibilityNodeInfo? {
+        if (node.text?.toString()?.trim() == text.trim()) {
+            return node
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i)
+            val result = findNodeByText(child, text)
+            if (result != null) return result
+        }
+        return null
+    }
+
+    /**
+     * 递归获取节点下所有文本
+     */
+    private fun getAllNodeText(node: AccessibilityNodeInfo): String {
+        val sb = StringBuilder()
+        node.text?.toString()?.takeIf { it.isNotBlank() }?.let { sb.append(it) }
+        for (i in 0 until node.childCount) {
+            sb.append(getAllNodeText(node.getChild(i)))
+        }
+        return sb.toString()
+    }
+
+    /**
+     * 判断节点是否有文本或子控件（过滤空布局）
+     */
+    private fun hasTextOrChildren(node: AccessibilityNodeInfo): Boolean {
+        if (node.text?.isNotEmpty() == true) return true
+        if (node.childCount > 0) return true
+        return false
+    }
+    fun collectLinearLayoutChildrenText(node: AccessibilityNodeInfo): String{
+        val result = extractJobDescription(node)
+        LogTool.d(TAG, result)
+        return result
     }
 }

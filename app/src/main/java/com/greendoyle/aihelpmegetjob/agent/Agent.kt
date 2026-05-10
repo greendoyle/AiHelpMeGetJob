@@ -1,10 +1,11 @@
 package com.greendoyle.aihelpmegetjob.agent
 
-import android.content.Context
-import android.util.Log
+import android.os.Handler
+import android.os.Looper
+import android.widget.TextView
 import com.greendoyle.aihelpmegetjob.network.ApiClient
 import com.greendoyle.aihelpmegetjob.network.Message
-import com.greendoyle.aihelpmegetjob.utils.JobCard
+import com.greendoyle.aihelpmegetjob.utils.LogTool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -89,7 +90,7 @@ object Agent {
      */
     private suspend fun analyzeInternal(): String {
         isAnalyzing = true
-        Log.d(TAG, "开始分析职位卡片")
+        LogTool.d(TAG, "开始分析职位卡片")
 
         try {
             // 构建用户消息（jdPrompt）
@@ -102,30 +103,29 @@ object Agent {
                 append("求职者需求：\n\n")
             }
 
-            // Log.d(TAG, "发送请求，消息数量：${conversationHistory.size}")
+            // LogTool.d(TAG, "发送请求，消息数量：${conversationHistory.size}")
 
             // 调用 LLM API
             val result = ApiClient.chatWithLLM(jdPrompt)
 
             if (result.isFailure) {
                 val error = result.exceptionOrNull()?.message ?: "未知错误"
-                Log.e(TAG, "API 错误：$error")
+                LogTool.e(TAG, "API 错误：$error")
                 analysisResult = "分析失败：$error"
             } else {
                 val aiResponse = result.getOrNull() ?: ""
                 analysisResult = aiResponse
-                Log.d(TAG, "分析完成，结果长度：${aiResponse.length}")
+                LogTool.d(TAG, "分析完成，结果长度：${aiResponse.length}")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "分析异常", e)
             analysisResult = "分析失败：${e.message}"
+            LogTool.e(TAG, analysisResult)
         } finally {
             isAnalyzing = false
         }
 
         return analysisResult ?: ""
     }
-
     /**
      * 职位卡片点击入口（外部调用）
      * 用于点击职位卡片时触发分析
@@ -133,10 +133,10 @@ object Agent {
     // TODO: 暂时放弃自动点击功能, 改为手动点击
     // suspend fun onJobCardClicked(): String {
     //     if (currentJobCard == null) {
-    //         Log.w(TAG, "没有职位卡片可分析")
+    //         LogTool.w(TAG, "没有职位卡片可分析")
     //         return ""
     //     }
-    //     Log.d(TAG, "职位卡片被点击，开始分析")
+    //     LogTool.d(TAG, "职位卡片被点击，开始分析")
     //     return analyze()
     // }
 

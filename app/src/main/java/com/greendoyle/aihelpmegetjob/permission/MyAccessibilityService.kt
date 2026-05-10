@@ -2,10 +2,13 @@ package com.greendoyle.aihelpmegetjob.permission
 
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.greendoyle.aihelpmegetjob.page_monitor.BossZhiPinPageMonitor
+import com.greendoyle.aihelpmegetjob.utils.LogTool
 import com.greendoyle.aihelpmegetjob.utils.UiTreeTraverser
+
 //import com.greendoyle.aihelpmegetjob.utils.LogTool
 
 @SuppressLint("AccessibilityPolicy")
@@ -27,50 +30,20 @@ class MyAccessibilityService : AccessibilityService() {
         AccessibilityHolder.updateState(true)
     }
 
-        // 防抖触发扫描
-    private fun debounceScanCards(rootNode: AccessibilityNodeInfo?) {
-        // 先移除之前的任务，避免重复执行
-        scanRunnable?.let {
-            handler.removeCallbacks(it)
-            scanRunnable = null
-        }
-
-        // 新建延迟任务
-        val runnable = Runnable {
-            UiTreeTraverser.traverseTree(rootNode)
-        }
-
-        scanRunnable = runnable
-        // 延迟 500ms 执行（可自己调 300~800）
-        handler.postDelayed(runnable, 500)
-    }
-
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-    // 1. 获取当前界面根节点
-        val rootNode = rootInActiveWindow ?: return
+        // 唯一接收事件
+        val rootGetter = { rootInActiveWindow }
 
-        // 2. 判断：是否是 BOSS APP + 是否是职位页面
-        val isBossApp = BossZhiPinPageMonitor.isBossApp(event)
-        val isJobPage = BossZhiPinPageMonitor.isJobPage(rootNode)
-
-        // 3. 只有 【BOSS + 职位页面】 才解析
-        if (isBossApp) {
-            if(isJobPage) {
-                // UiTreeTraverser.traverseTree(rootNode)
-                debounceScanCards(rootNode)
-            }
-            else if(BossZhiPinPageMonitor.hasJobDetailFeature(rootNode))
-            {
-                // TODO: 先获取当前页面所有文字
-
-                // TODO: 传递给Agent.setJobCard
-
-                // TODO: call Agent.analyze
-            }
+        // 分发给 BOSS 监听
+        if(event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)
+        {
+            LogTool.d(TAG, "onAccessibilityEvent dist window state changed")
+            BossZhiPinPageMonitor.onAccessibilityEvent(event, rootGetter)
         }
-//        LogTool.d(TAG, "onAccessibilityEvent")
     }
-
+    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        return START_STICKY // 保活
+    }
     override fun onInterrupt() {
 //        LogTool.d(TAG, "onInterrupt")
     }

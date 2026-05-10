@@ -235,7 +235,7 @@ class BossZhiPinPageMonitorTest {
         `when`(mockRoot.text).thenReturn("详情页")
         `when`(mockRoot.childCount).thenReturn(1)
         val mockChild = mock(AccessibilityNodeInfo::class.java)
-        `when`(mockChild.text).thenReturn("岗位职责")
+        `when`(mockChild.text).thenReturn("职位详情")
         `when`(mockRoot.getChild(0)).thenReturn(mockChild)
 
         val result = BossZhiPinPageMonitor.isJobPage(mockRoot)
