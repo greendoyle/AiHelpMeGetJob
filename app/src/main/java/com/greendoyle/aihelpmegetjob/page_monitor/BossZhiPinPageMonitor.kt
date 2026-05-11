@@ -2,19 +2,14 @@ package com.greendoyle.aihelpmegetjob.page_monitor
 
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import android.widget.ScrollView
-import android.widget.TextView
-import com.greendoyle.aihelpmegetjob.R
 import com.greendoyle.aihelpmegetjob.agent.Agent
+import com.greendoyle.aihelpmegetjob.permission.FloatWindowManager
 import com.greendoyle.aihelpmegetjob.utils.LogTool
 import com.greendoyle.aihelpmegetjob.utils.UiTreeTraverser
-import com.lzf.easyfloat.EasyFloat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -97,13 +92,13 @@ object BossZhiPinPageMonitor {
                 val found = isJobPage(root)
                 if (found) {
                     val jobText = UiTreeTraverser.collectLinearLayoutChildrenText(root)
-                    appendFloatLog(jobText)
+                    FloatWindowManager.currentJobCardText = jobText
+                    // FloatWindowManager.appendLog("\n$jobText")
                     // TODO: Agent逻辑
-//                    Agent.setJobCardText(jobText)
 //                    serviceScope.launch()
 //                    {
-//                        val result = Agent.analyze()
-//                        appendFloatLog(result)
+//                        val result = Agent.analyze(jobText)
+//                        FloatWindowManager.appendLog(result)
 //                    }
                 }
             } finally {
@@ -111,25 +106,5 @@ object BossZhiPinPageMonitor {
             }
         }
         handler.postDelayed(checkTask!!, 300)
-    }
-
-    fun appendFloatLog(newLog: String) {
-        val mainScope = MainScope()
-
-        mainScope.launch(Dispatchers.Main) {
-            val rootView = EasyFloat.getFloatView("float_panel")
-
-            rootView?.let {
-                val tvLog = it.findViewById<TextView>(R.id.tv_log)
-                val scrollView = it.findViewById<ScrollView>(R.id.sv_log)
-
-                tvLog?.append("\n$newLog")
-                scrollView?.post {
-                    scrollView.fullScroll(View.FOCUS_DOWN)
-                }
-            }
-
-            mainScope.cancel()
-        }
     }
 }

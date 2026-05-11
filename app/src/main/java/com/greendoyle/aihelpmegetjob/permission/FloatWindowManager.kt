@@ -16,6 +16,9 @@ object FloatWindowManager {
     private var mScrollView: ScrollView? = null
     private var isInitialized = false
 
+    // 当前岗位卡片文本（由 BossZhiPinPageMonitor 写入）
+    var currentJobCardText: String? = null
+
     const val TAG = "FloatWindow"
 
     fun init(context: Context) {
@@ -33,7 +36,7 @@ object FloatWindowManager {
                 }
 
                 view.findViewById<Button>(R.id.btn_record)?.setOnClickListener {
-                    appendLog("点击按钮测试\n")
+                    handleMatchButtonClick()
                 }
             }
             .setShowPattern(ShowPattern.ALL_TIME)
@@ -45,6 +48,19 @@ object FloatWindowManager {
     fun appendLog(text: String) {
         mLogTextView?.append(text)
         mScrollView?.post {
-            mScrollView?.fullScroll(View.FOCUS_DOWN)        }
+            mScrollView?.fullScroll(View.FOCUS_DOWN)
+        }
+    }
+
+    private fun handleMatchButtonClick() {
+        appendLog("\n岗位匹配中...\n")
+        val jobText = currentJobCardText
+        if (jobText == null) {
+            appendLog("暂无岗位数据，请先浏览职位详情页\n")
+            return
+        }
+        // 存到变量，后续对接 Agent 分析
+        appendLog("已获取岗位数据（长度: ${jobText.length}）\n")
+        // TODO: Agent.analyze(jobText)
     }
 }

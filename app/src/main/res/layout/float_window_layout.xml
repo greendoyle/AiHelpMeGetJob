@@ -23,7 +23,8 @@
         android:layout_marginTop="8dp"
         android:background="#F5F5F5"
         android:padding="8dp"
-        android:scrollbars="vertical">
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false">
 
         <TextView
             android:id="@+id/tv_log"
