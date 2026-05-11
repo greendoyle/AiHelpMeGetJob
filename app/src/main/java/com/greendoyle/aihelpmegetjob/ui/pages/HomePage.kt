@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.greendoyle.aihelpmegetjob.permission.AccessibilityHolder
+import com.greendoyle.aihelpmegetjob.permission.FloatWindowManager
 import com.greendoyle.aihelpmegetjob.permission.PermissionHelper
 import com.greendoyle.aihelpmegetjob.utils.AppLauncher
 import com.greendoyle.aihelpmegetjob.utils.RecruitApp
@@ -23,6 +24,7 @@ fun HomePage() {
     var browsedCount by remember { mutableIntStateOf(0) }
     var greetingCount by remember { mutableIntStateOf(0) }
     var showAccessibilityDialog by remember { mutableStateOf(false) }
+    var showOverlayDialog by remember { mutableStateOf(false) }
 
     val TAG = "HomePage"
     Column(
@@ -58,12 +60,18 @@ fun HomePage() {
                     // 检查无障碍服务是否已启用
                     if (!AccessibilityHolder.isServiceAvailable) {
                         showAccessibilityDialog = true
-                    } else {
-                        taskStatus = "运行中"
-                        // TODO: to start the agent task and open the target app
-                        LogTool.d(TAG, "to start boss zhipin")
-                        AppLauncher.launchRecruitApp(context, RecruitApp.BOSS_ZHI_PIN)
+                        return@Button
                     }
+                    // 检查悬浮窗权限
+                    if (!PermissionHelper.isOverlayPermissionGranted(context)) {
+                        showOverlayDialog = true
+                        return@Button
+                    }
+                    // 权限均具备，初始化悬浮窗并启动任务
+                    FloatWindowManager.init(context)
+                    taskStatus = "运行中"
+                    LogTool.d(TAG, "to start boss zhipin")
+                    AppLauncher.launchRecruitApp(context, RecruitApp.BOSS_ZHI_PIN)
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -79,6 +87,17 @@ fun HomePage() {
             onOpenSettings = {
                 PermissionHelper.openAccessibilitySettings(context)
                 showAccessibilityDialog = false
+            }
+        )
+    }
+
+    // 悬浮窗权限未启用提示对话框
+    if (showOverlayDialog) {
+        OverlayDialog(
+            onDismiss = { showOverlayDialog = false },
+            onOpenSettings = {
+                PermissionHelper.openOverlaySettings(context)
+                showOverlayDialog = false
             }
         )
     }
@@ -106,6 +125,49 @@ fun AccessibilityDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "1. 点击下方[设置]按钮，跳转到系统设置页面\n2. 在[已下载的应用]中找到[AiHelpMeGetJob]\n3. 打开[AiHelpMeGetJob]的无障碍服务开关",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onOpenSettings
+            ) {
+                Text("设置")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+/**
+ * 悬浮窗权限未启用提示对话框
+ */
+@Composable
+fun OverlayDialog(
+    onDismiss: () -> Unit,
+    onOpenSettings: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "需要悬浮窗权限")
+        },
+        text = {
+            Column {
+                Text(
+                    text = "本应用需要使用悬浮窗来展示实时分析日志。请按照以下步骤开启：",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "1. 点击下方[设置]按钮，跳转到系统设置页面\n2. 找到[AiHelpMeGetJob]应用\n3. 打开[允许显示悬浮窗]开关",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
