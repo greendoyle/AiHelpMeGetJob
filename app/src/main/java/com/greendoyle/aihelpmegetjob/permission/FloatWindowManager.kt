@@ -38,6 +38,14 @@ object FloatWindowManager {
                 view.findViewById<Button>(R.id.btn_record)?.setOnClickListener {
                     handleMatchButtonClick()
                 }
+
+                view.findViewById<Button>(R.id.btn_scroll_up)?.setOnClickListener {
+                    mScrollView?.smoothScrollBy(0, -150)
+                }
+
+                view.findViewById<Button>(R.id.btn_scroll_down)?.setOnClickListener {
+                    mScrollView?.smoothScrollBy(0, 150)
+                }
             }
             .setShowPattern(ShowPattern.ALL_TIME)
             .setSidePattern(SidePattern.RIGHT)
