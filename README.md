@@ -9,15 +9,13 @@ This is an Android application based on accessibility services, intelligently an
 
 ### Core Features
 - **Accessibility Parsing**: Read Boss Zhiping app interface using Android AccessibilityService
-- **Job Extraction**: Automatically identify and extract key information from job cards
 - **AI Analysis**: LLM Agent intelligently analyzes job match scores and conducts preliminary communication
-- **Automation**: One-click startup, can quickly communicate with multiple positions
 
 
 ### Usage Steps
    - Open this application, set relevant parameters including job-related information, personal resume information, and LLM API KEY/URL information
    - Start task from home page, the app will detect if accessibility mode is enabled, if not enabled, it will guide to accessibility mode enable interface, only after enabling can start the task
-   - After starting the task, automatically start Boss Zhiping application, begin to detect positions and automatic communication
+   - After starting the task, automatically start Boss Zhiping application, please manually click on job entries, entering the job entry will intelligently analyze and combine job requirements and skills for AI scoring of job match
 
 
 ### Important Notes
