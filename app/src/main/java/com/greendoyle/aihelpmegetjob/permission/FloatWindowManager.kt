@@ -6,11 +6,19 @@ import android.widget.Button
 import android.widget.ScrollView
 import android.widget.TextView
 import com.greendoyle.aihelpmegetjob.R
+import com.greendoyle.aihelpmegetjob.agent.Agent
 import com.lzf.easyfloat.EasyFloat
 import com.lzf.easyfloat.enums.ShowPattern
 import com.lzf.easyfloat.enums.SidePattern
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 
 object FloatWindowManager {
+
+    private val coroutineScope = MainScope()
+    private var isAnalyzing = false
 
     private var mLogTextView: TextView? = null
     private var mScrollView: ScrollView? = null
@@ -53,6 +61,15 @@ object FloatWindowManager {
             .show()
     }
 
+    fun destroy() {
+        EasyFloat.dismiss("float_panel")
+        (coroutineScope.coroutineContext[Job])?.cancel()
+        mLogTextView = null
+        mScrollView = null
+        currentJobCardText = null
+        isInitialized = false
+    }
+
     fun appendLog(text: String) {
         mLogTextView?.append(text)
         mScrollView?.post {
@@ -61,14 +78,24 @@ object FloatWindowManager {
     }
 
     private fun handleMatchButtonClick() {
-        appendLog("\n岗位匹配中...\n")
+        if (isAnalyzing) return // 防止重复点击
+
         val jobText = currentJobCardText
-        if (jobText == null) {
-            appendLog("暂无岗位数据，请先浏览职位详情页\n")
+        if (jobText.isNullOrEmpty()) {
+            appendLog("\n暂无岗位数据，请先浏览职位详情页\n")
             return
         }
-        // 存到变量，后续对接 Agent 分析
-        appendLog("已获取岗位数据（长度: ${jobText.length}）\n")
-        // TODO: Agent.analyze(jobText)
+
+        appendLog("\n岗位匹配中...\n")
+        isAnalyzing = true
+
+        coroutineScope.launch {
+            try {
+                val result = Agent.analyze(jobText)
+                appendLog("匹配结果：$result\n")
+            } finally {
+                isAnalyzing = false // 无论成功失败，都恢复状态
+            }
+        }
     }
 }

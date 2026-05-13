@@ -55,6 +55,7 @@ fun HomePage() {
         Button(
             onClick = {
                 if (taskStatus == "运行中") {
+                    FloatWindowManager.destroy()
                     taskStatus = "暂停"
                 } else {
                     // 检查无障碍服务是否已启用

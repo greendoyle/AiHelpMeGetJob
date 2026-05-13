@@ -1,8 +1,5 @@
 package com.greendoyle.aihelpmegetjob.agent
 
-import android.os.Handler
-import android.os.Looper
-import android.widget.TextView
 import com.greendoyle.aihelpmegetjob.network.ApiClient
 import com.greendoyle.aihelpmegetjob.network.Message
 import com.greendoyle.aihelpmegetjob.utils.LogTool
@@ -86,6 +83,14 @@ object Agent {
     }
 
     /**
+     * 直接传入职位文本进行分析
+     */
+    suspend fun analyze(jobText: String): String {
+        setJobCardText(jobText)
+        return analyze()
+    }
+
+    /**
      * 内部分析逻辑
      */
     private suspend fun analyzeInternal(): String {
@@ -120,19 +125,6 @@ object Agent {
 
         return analysisResult ?: ""
     }
-    /**
-     * 职位卡片点击入口（外部调用）
-     * 用于点击职位卡片时触发分析
-     */
-    // TODO: 暂时放弃自动点击功能, 改为手动点击
-    // suspend fun onJobCardClicked(): String {
-    //     if (currentJobCard == null) {
-    //         LogTool.w(TAG, "没有职位卡片可分析")
-    //         return ""
-    //     }
-    //     LogTool.d(TAG, "职位卡片被点击，开始分析")
-    //     return analyze()
-    // }
 
     /**
      * 重置所有状态
