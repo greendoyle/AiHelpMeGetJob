@@ -67,9 +67,11 @@ fun AiSettingsPage() {
                     isTesting = true
                     testFeedback = ""
                     scope.launch {
-                        ApiClient.setBaseUrl(apiUrl)
-                        ApiClient.setApiKey(apiKey)
-                        val result = ApiClient.testConnectivity(apiKey, model = model)
+                        val result = ApiClient.testConnectivity(
+                            overrideUrl = apiUrl,
+                            overrideKey = apiKey,
+                            overrideModel = model
+                        )
                         isTesting = false
                         testFeedback = if (result.isSuccess) {
                             "连通性测试成功！"

@@ -2,6 +2,7 @@ package com.greendoyle.aihelpmegetjob.network
 
 import com.greendoyle.aihelpmegetjob.BuildConfig
 import com.greendoyle.aihelpmegetjob.aitools.ToolRegistry
+import com.greendoyle.aihelpmegetjob.mmkv.StorageManager
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -65,7 +66,7 @@ object ApiClient {
     private var apiKey: String = ""
 
     @Volatile
-    private var systemPrompt: String = ""
+    private var model: String = "gpt-4o" // 默认模型
 
     private val api: OpenAIApi
         get() = getOrCreateRetrofit().create()
@@ -79,27 +80,40 @@ object ApiClient {
         }
     }
 
-    fun setBaseUrl(url: String) {
-        val fixedUrl = fixBaseUrl(url)
-        if (baseUrl != fixedUrl) {
-            baseUrl = fixedUrl
-            retrofit = null
-            okHttpClient = null
+    /**
+     * 从存储中加载配置到内存（每次请求前自动调用）
+     */
+    private fun ensureConfigLoaded() {
+        val aiConfig = StorageManager.getAiConfig()
+
+        val newUri = aiConfig.apiUri
+        if (newUri.isNotEmpty() && newUri != baseUrl) {
+            val fixed = fixBaseUrl(newUri)
+            if (fixed != baseUrl) {
+                baseUrl = fixed
+                retrofit = null
+                okHttpClient = null
+            }
+        }
+
+        if (aiConfig.apiKey.isNotEmpty() && aiConfig.apiKey != apiKey) {
+            apiKey = aiConfig.apiKey
+        }
+
+        if (aiConfig.model.isNotEmpty() && aiConfig.model != model) {
+            model = aiConfig.model
         }
     }
 
-    fun getBaseUrl(): String = baseUrl
-
-    fun setApiKey(key: String) {
-        apiKey = key
-    }
-
-    fun getApiKey(): String = apiKey
-
-    fun getSystemPrompt(): String = systemPrompt
-
-    fun setSystemPrompt(prompt: String) {
-        systemPrompt = prompt
+    /**
+     * 校验当前配置是否完整
+     * @return null 表示配置完整，否则返回错误原因
+     */
+    private fun validateConfig(): String? {
+        if (baseUrl.isEmpty()) return "API URL 未配置"
+        if (apiKey.isEmpty()) return "API Key 未配置"
+        if (model.isEmpty()) return "Model 未配置"
+        return null
     }
 
     private fun getOrCreateRetrofit(): Retrofit {
@@ -108,15 +122,39 @@ object ApiClient {
         synchronized(this) {
             val existing2 = retrofit
             if (existing2 != null) return existing2
-            val client = createOkHttpClient()
+
+            // 单独获取OkHttpClient（可能只是Key变化）
+            val client = getOrCreateOkHttpClient()
+
             val newRetrofit = Retrofit.Builder()
                 .baseUrl(baseUrl)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
             retrofit = newRetrofit
-            okHttpClient = client
             return newRetrofit
+        }
+    }
+
+    /**
+     * 获取或创建OkHttpClient
+     * 如果apiKey有变化，需要创建新的OkHttpClient（因为认证信息在拦截器中）
+     */
+    private fun getOrCreateOkHttpClient(): OkHttpClient {
+        val existing = okHttpClient
+        if (existing != null) {
+            // 检查是否需要重建（主要是apiKey变化）
+            // 这里简化处理，如果okHttpClient存在就直接返回
+            return existing
+        }
+
+        synchronized(this) {
+            val existing2 = okHttpClient
+            if (existing2 != null) return existing2
+
+            val client = createOkHttpClient()
+            okHttpClient = client
+            return client
         }
     }
 
@@ -126,11 +164,11 @@ object ApiClient {
             .readTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
 
-        // Add auth interceptor
+        // Add auth interceptor — reads apiKey dynamically so it always uses the current value
         val authInterceptor = okhttp3.Interceptor { chain ->
-            val original = chain.request()
-            val request = original.newBuilder()
-                .addHeader("Authorization", "Bearer $apiKey")
+            val currentKey = apiKey
+            val request = chain.request().newBuilder()
+                .addHeader("Authorization", "Bearer $currentKey")
                 .addHeader("Content-Type", "application/json")
                 .build()
             chain.proceed(request)
@@ -148,13 +186,19 @@ object ApiClient {
         return builder.build()
     }
 
-    suspend fun testConnectivity(key: String, model: String = "gpt-3.5-turbo"): Result<String> {
-        // Set the API key before making the test call
-        setApiKey(key)
+    suspend fun testConnectivity(
+        overrideUrl: String? = null,
+        overrideKey: String? = null,
+        overrideModel: String? = null
+    ): Result<String> {
+        // If overrides are provided, use them directly; otherwise load from storage
+        if (overrideUrl != null) baseUrl = fixBaseUrl(overrideUrl) else ensureConfigLoaded()
+        if (overrideKey != null) apiKey = overrideKey
+        if (overrideModel != null) model = overrideModel
 
-        // Validate base URL is set
-        if (baseUrl.isEmpty()) {
-            return Result.failure(IllegalArgumentException("Base URL not configured"))
+        val configError = validateConfig()
+        if (configError != null) {
+            return Result.failure(IllegalArgumentException(configError))
         }
 
         return try {
@@ -179,44 +223,39 @@ object ApiClient {
     /**
      * 与 LLM API 通信
      * @param jdPrompt 职位描述/问题 prompt
-     * @param systemPrompt 系统提示词（可选，默认使用全局设置的 systemPrompt）
-     * @param model 模型名称（可选，默认使用全局配置）
+     * @param systemPrompt 系统提示词（可选）
+     * @param temperature 温度参数
      * @return LLM 返回的响应内容
      */
-    suspend fun chatWithLLM(
+    suspend fun chatWithLLm(
         jdPrompt: String,
         systemPrompt: String? = null,
-        model: String = "gpt-4o",
         temperature: Double = 0.7
     ): Result<String> {
-        // Validate inputs
         if (jdPrompt.isBlank()) {
-            return Result.failure(IllegalArgumentException("JD prompt cannot be empty"))
+            return Result.failure(IllegalArgumentException("Prompt cannot be empty"))
         }
 
-        // Validate base URL is set
-        if (baseUrl.isEmpty()) {
-            return Result.failure(IllegalArgumentException("Base URL not configured"))
+        ensureConfigLoaded()
+        val configError = validateConfig()
+        if (configError != null) {
+            return Result.failure(IllegalArgumentException(configError))
         }
 
         // Determine which system prompt to use
-        val effectiveSystemPrompt = systemPrompt ?: this.systemPrompt
+        val messages = if (!systemPrompt.isNullOrBlank()) {
+            listOf(
+                Message(role = "system", content = systemPrompt),
+                Message(role = "user", content = jdPrompt)
+            )
+        } else {
+            listOf(Message(role = "user", content = jdPrompt))
+        }
 
         return try {
-            // Build messages with system prompt + user prompt
-            val messages = if (effectiveSystemPrompt.isNotBlank()) {
-                listOf(
-                    Message(role = "system", content = effectiveSystemPrompt),
-                    Message(role = "user", content = jdPrompt)
-                )
-            } else {
-                listOf(Message(role = "user", content = jdPrompt))
-            }
-
-            // Make API call
             val response = api.chatCompletion(
                 ChatCompletionRequest(
-                    model = model.ifEmpty { "gpt-4o" },
+                    model = this.model,
                     messages = messages,
                     tools = ToolRegistry.getOpenaiToolsSchema(),
                     temperature = temperature
@@ -243,14 +282,20 @@ object ApiClient {
     suspend fun chatBatch(
         jdPrompts: List<String>,
         systemPrompt: String? = null,
-        model: String = "gpt-4o",
         temperature: Double = 0.7
     ): Result<List<String>> {
         if (jdPrompts.isEmpty()) {
             return Result.failure(IllegalArgumentException("JD prompts list cannot be empty"))
         }
 
+        ensureConfigLoaded()
+        val configError = validateConfig()
+        if (configError != null) {
+            return Result.failure(IllegalArgumentException(configError))
+        }
+
         val results = mutableListOf<String>()
+        val currentModel = this.model
 
         for ((index, prompt) in jdPrompts.withIndex()) {
             if (prompt.isBlank()) {
@@ -258,10 +303,9 @@ object ApiClient {
                 continue
             }
 
-            val effectiveSystemPrompt = systemPrompt ?: this.systemPrompt
-            val messages = if (effectiveSystemPrompt.isNotBlank()) {
+            val messages = if (!systemPrompt.isNullOrBlank()) {
                 listOf(
-                    Message(role = "system", content = effectiveSystemPrompt),
+                    Message(role = "system", content = systemPrompt),
                     Message(role = "user", content = prompt)
                 )
             } else {
@@ -271,7 +315,7 @@ object ApiClient {
             try {
                 val response = api.chatCompletion(
                     ChatCompletionRequest(
-                        model = model.ifEmpty { "gpt-4o" },
+                        model = currentModel,
                         messages = messages,
                         tools = ToolRegistry.getOpenaiToolsSchema(),
                         temperature = temperature

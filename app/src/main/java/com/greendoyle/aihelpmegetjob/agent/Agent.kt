@@ -35,7 +35,7 @@ object Agent {
 
     // 对话历史（用于上下文）
     private val conversationHistory = mutableListOf<Message>()
-    private val agentPrompt = "你是一个求职助手，分析当前职位的招聘要求和岗位职责, 比较当前求职者的技能, 打个岗位匹配度分. 不要说废话, 只要打个分, 满分一百分"
+    private val agentSystemPrompt = "你是一个求职助手，分析当前职位的招聘要求和岗位职责, 比较当前求职者的技能, 打个岗位匹配度分. 不要说废话, 只要打个分, 满分一百分"
 
     // 当前分析的职位卡片
     var currentJobCardText: String? = null
@@ -93,20 +93,14 @@ object Agent {
         LogTool.d(TAG, "开始分析职位卡片")
 
         try {
-            // 构建用户消息（jdPrompt）
-
             val jdPrompt = buildString {
-                append(agentPrompt)
                 append("请分析以下职位卡片：\n\n")
                 append("内容：${currentJobCardText}\n")
                 append("求职者技能：\n\n")
                 append("求职者需求：\n\n")
             }
 
-            // LogTool.d(TAG, "发送请求，消息数量：${conversationHistory.size}")
-
-            // 调用 LLM API
-            val result = ApiClient.chatWithLLM(jdPrompt)
+            val result = ApiClient.chatWithLLm(jdPrompt, systemPrompt = agentSystemPrompt)
 
             if (result.isFailure) {
                 val error = result.exceptionOrNull()?.message ?: "未知错误"
