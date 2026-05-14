@@ -10,15 +10,14 @@ import com.greendoyle.aihelpmegetjob.agent.Agent
 import com.lzf.easyfloat.EasyFloat
 import com.lzf.easyfloat.enums.ShowPattern
 import com.lzf.easyfloat.enums.SidePattern
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
 object FloatWindowManager {
 
-    private val coroutineScope = MainScope()
-    private var isAnalyzing = false
+    private lateinit var coroutineScope: CoroutineScope
 
     private var mLogTextView: TextView? = null
     private var mScrollView: ScrollView? = null
@@ -32,6 +31,9 @@ object FloatWindowManager {
     fun init(context: Context) {
         if (isInitialized) return
         isInitialized = true
+
+        // 重新创建 scope，避免上次 cancel 后无法再 launch
+        coroutineScope = MainScope()
 
         EasyFloat.with(context)
             .setTag("float_panel")
@@ -78,7 +80,7 @@ object FloatWindowManager {
     }
 
     private fun handleMatchButtonClick() {
-        if (isAnalyzing) return // 防止重复点击
+        if (Agent.isAnalyzing) return
 
         val jobText = currentJobCardText
         if (jobText.isNullOrEmpty()) {
@@ -87,15 +89,10 @@ object FloatWindowManager {
         }
 
         appendLog("\n岗位匹配中...\n")
-        isAnalyzing = true
 
         coroutineScope.launch {
-            try {
-                val result = Agent.analyze(jobText)
-                appendLog("匹配结果：$result\n")
-            } finally {
-                isAnalyzing = false // 无论成功失败，都恢复状态
-            }
+            val result = Agent.analyze(jobText)
+            appendLog("匹配结果：$result\n")
         }
     }
 }

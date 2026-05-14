@@ -1,5 +1,6 @@
 package com.greendoyle.aihelpmegetjob.agent
 
+import com.greendoyle.aihelpmegetjob.mmkv.StorageManager
 import com.greendoyle.aihelpmegetjob.network.ApiClient
 import com.greendoyle.aihelpmegetjob.network.Message
 import com.greendoyle.aihelpmegetjob.utils.LogTool
@@ -32,7 +33,7 @@ object Agent {
 
     // 对话历史（用于上下文）
     private val conversationHistory = mutableListOf<Message>()
-    private val agentSystemPrompt = "你是一个求职助手，分析当前职位的招聘要求和岗位职责, 比较当前求职者的技能, 打个岗位匹配度分. 不要说废话, 只要打个分, 满分一百分"
+    private val agentSystemPrompt = "你是一名求职规划分析师，根据用户简历内容和岗位 JD，按以下固定格式输出，全程精简、每句话不超过 15 字，不要多余话术、不要换行过多：匹配度评分：XX 分（满分 100）匹配亮点：一句话精简概括待提升点：一句话精简概括"
 
     // 当前分析的职位卡片
     var currentJobCardText: String? = null
@@ -98,11 +99,27 @@ object Agent {
         LogTool.d(TAG, "开始分析职位卡片")
 
         try {
+            val resume = StorageManager.getResumeInfo()
+            val filter = StorageManager.getFilterConfig()
+
             val jdPrompt = buildString {
-                append("请分析以下职位卡片：\n\n")
+                append("请分析以下岗位JD：\n\n")
                 append("内容：${currentJobCardText}\n")
-                append("求职者技能：\n\n")
-                append("求职者需求：\n\n")
+
+                append("求职者技能：\n")
+                if (resume.coreSkills.isNotBlank()) append("核心技能：${resume.coreSkills}\n")
+                if (resume.workYears.isNotBlank()) append("工作年限：${resume.workYears}\n")
+                if (resume.education.isNotBlank()) append("学历：${resume.education}\n")
+                if (resume.jobIntent.isNotBlank()) append("求职意向：${resume.jobIntent}\n")
+
+                append("求职者需求：\n")
+                if (filter.city.isNotBlank()) append("期望城市：${filter.city}\n")
+                if (filter.salaryMin.isNotBlank() || filter.salaryMax.isNotBlank()) {
+                    append("期望薪资：${filter.salaryMin}-${filter.salaryMax}\n")
+                }
+                if (filter.acceptOutsourcing.isNotBlank() && filter.acceptOutsourcing != "不限") {
+                    append("外包要求：${filter.acceptOutsourcing}\n")
+                }
             }
 
             val result = ApiClient.chatWithLLm(jdPrompt, systemPrompt = agentSystemPrompt)

@@ -77,21 +77,18 @@ object StorageManager {
     }
 
     fun saveAiConfig(aiConfig: AiConfig) {
-        // 丢后台：序列化、打码、打印、存储 全在子线程
-        AppDispatch.launchIO {
-            // 真实完整JSON用于本地保存
-            val realJson = LogTool.gson.toJson(aiConfig)
+        // 真实完整JSON用于本地保存
+        val realJson = LogTool.gson.toJson(aiConfig)
 
-            // data class copy 替换打码后的 apiKey（完美支持 val）
+        // 同步写入 MMKV，保证后续读取能拿到最新值
+        mmkv.encode("ai_config", realJson)
+
+        // 异步打印打码日志
+        AppDispatch.launchIO {
             val debugConfig = aiConfig.copy(
                 apiKey = LogTool.maskApiKey(aiConfig.apiKey)
             )
-
-            // 格式化打印打码后的对象
             LogTool.obj(TAG, debugConfig)
-
-            // MMKV 耗时存储放后台
-            mmkv.encode("ai_config", realJson)
         }
     }
 

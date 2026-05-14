@@ -17,10 +17,8 @@ fun SettingsPage() {
     val savedFilter = remember { StorageManager.getFilterConfig() }
     var keywords by remember { mutableStateOf(savedFilter.keywords) }
     var city by remember { mutableStateOf(savedFilter.city) }
-    var salaryRange by remember {
-        val parts = listOf(savedFilter.salaryMin, savedFilter.salaryMax).filter { it.isNotEmpty() }
-        mutableStateOf(parts.joinToString("-"))
-    }
+    var salaryMin by remember { mutableStateOf(savedFilter.salaryMin) }
+    var salaryMax by remember { mutableStateOf(savedFilter.salaryMax) }
     var outsourcing by remember {
         mutableStateOf(savedFilter.acceptOutsourcing.ifEmpty { "不限" })
     }
@@ -57,13 +55,25 @@ fun SettingsPage() {
             singleLine = true
         )
 
-        OutlinedTextField(
-            value = salaryRange,
-            onValueChange = { salaryRange = it },
-            label = { Text("期望薪资 (如 5k-8k)") },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedTextField(
+                value = salaryMin,
+                onValueChange = { salaryMin = it },
+                label = { Text("最低薪资") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = salaryMax,
+                onValueChange = { salaryMax = it },
+                label = { Text("最高薪资") },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+        }
 
         var outsourcingExpanded by remember { mutableStateOf(false) }
         ExposedDropdownMenuBox(
@@ -125,9 +135,6 @@ fun SettingsPage() {
 
         Button(
             onClick = {
-                val parts = salaryRange.split("-")
-                val salaryMin = parts.getOrNull(0)?.trim() ?: ""
-                val salaryMax = parts.getOrNull(1)?.trim() ?: ""
                 StorageManager.saveFilterConfig(
                     FilterConfig(
                         keywords = keywords,
